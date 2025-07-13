@@ -4,56 +4,27 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 module Main where
 
+
+import Data.Maybe (fromJust)
 import GHC.Generics (Generic)
 import Miso
 import Miso.Lens
 import Miso.String (MisoString, ms)
+import Network.URI
 import Network.Wai
 import Prelude hiding (div)
 import Servant
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import qualified HeaderComponent as HC
 import qualified Network.Wai.Handler.Warp as Warp
+import Model
 
--- | Component model state
-newtype Model = Model
-  { _counter :: Int
-  }
-  deriving (Show, Eq)
-
-
-counter :: Lens Model Int
-counter = lens _counter $ \model new -> model { _counter = new }
-
-updateModel :: Action -> Effect Model Action
-updateModel NoOp = pure ()
-
-newtype Page = Page (Component Model Action)
-
-instance ToHtml Page where
-  toHtml (Page x) =
-    toHtml
-      [ doctype_,
-        head_
-          []
-          [ meta_ [charset_ "utf-8"],
-            script_ [src_ "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"] ""
-          ],
-        body_ [] [toView x]
-      ]
-
-type API = Get '[HTML] Page
-
-data Action
-  = NoOp
-  deriving (Show, Eq)
-
-server :: Server API
-server = pure (Page app)
 
 main :: IO ()
 main = do
@@ -62,14 +33,25 @@ main = do
 
 app :: Component Model Action
 app =
-  component emptyModel updateModel viewModel
-
-emptyModel :: Model
-emptyModel = Model 0
+  (component emptyModel updateModel viewModel)
+    { subs = [uriSub HandleURI]
+    }
 
 viewModel :: Model -> View Action
-viewModel x =
-  div_
-    []
-    [ HC.viewModel ()
-    ]
+viewModel m = view_
+  where
+    view_ = either (const notFound) id $ Miso.route (Proxy @Routes) handlers uri m
+    handlers = loginPage :<|> homePage
+
+    homePage (_ :: Model) = div_
+      []
+      [ HC.viewModel ()
+      ]
+
+    loginPage (m :: Model) = div_ [] [text "Login"]
+
+    notFound = div_ [] [text "not found"]
+
+
+server :: Server API
+server = pure (Page app)

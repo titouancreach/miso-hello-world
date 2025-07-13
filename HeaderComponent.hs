@@ -5,11 +5,12 @@ module HeaderComponent where
 import Miso
 import Miso.Lens
 import Miso.String
+import Model
 
 generateLink :: MisoString -> View action
 generateLink name = a_ [class_ "text-sm/6 font-semibold text-gray-900", href_ "#"] [text name]
 
-viewModel :: () -> View action
+viewModel :: () -> View Action
 viewModel _ =
   header_
     [class_ "bg-white"]
@@ -33,8 +34,8 @@ viewModel _ =
           div_
             [ class_ "hidden lg:flex"]
             [
-              a_
-              [ href_ "#", class_ "text-sm/6 font-semibold text-gray-900"]
+              button_
+              [ onClick goLogin, class_ "text-sm/6 font-semibold text-gray-900"]
               [
                 text "Log in",
                 span_ [] [text "&rarr;"]

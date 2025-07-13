@@ -28,6 +28,7 @@ executable app
     lucid,
     bytestring,
     text,
-    aeson
+    aeson,
+    network-uri
   default-language:
     Haskell2010
